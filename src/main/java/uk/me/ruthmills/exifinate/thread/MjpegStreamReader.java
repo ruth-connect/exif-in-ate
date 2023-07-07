@@ -7,7 +7,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
@@ -15,13 +18,11 @@ import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Scope;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
-public class MjpegStream implements Runnable {
+public class MjpegStreamReader implements Runnable {
 
 	private static final int INPUT_BUFFER_SIZE = 16384;
 
@@ -30,10 +31,13 @@ public class MjpegStream implements Runnable {
 	protected byte[] currentFrame = new byte[0];
 	private Thread streamReader;
 	private boolean connected;
+
+	@Value("${streamURL}")
 	private String streamURL;
 
-	private static final Logger logger = LoggerFactory.getLogger(MjpegStream.class);
+	private static final Logger logger = LoggerFactory.getLogger(MjpegStreamReader.class);
 
+	@PostConstruct
 	public void initialise() {
 		this.streamReader = new Thread(this, "MJPEG stream reader");
 		streamReader.setPriority(6); // higher priority than normal (5).
@@ -99,7 +103,7 @@ public class MjpegStream implements Runnable {
 	}
 
 	private void handleNewFrame() throws ImageWriteException {
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 		String nowFormatted = now.format(DateTimeFormatter.ISO_DATE_TIME);
 		logger.info(nowFormatted);
 		TiffOutputSet outputSet = new TiffOutputSet();
