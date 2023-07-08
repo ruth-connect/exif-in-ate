@@ -115,7 +115,7 @@ public class MjpegStreamReader implements Runnable {
 			final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
 
 			// Use the APPLICATION_NOTES tag for the timestamp in milliseconds.
-			exifDirectory.add(ExifTagConstants.EXIF_TAG_APPLICATION_NOTES, nowFormatted.getBytes());
+			exifDirectory.add(ExifTagConstants.EXIF_TAG_OWNER_NAME, nowFormatted);
 			try (ByteArrayOutputStream exifOutputStream = new ByteArrayOutputStream(INPUT_BUFFER_SIZE)) {
 				// Create a copy of the JPEG image with EXIF metadata added.
 				new ExifRewriter().updateExifMetadataLossy(currentFrame, exifOutputStream, outputSet);
