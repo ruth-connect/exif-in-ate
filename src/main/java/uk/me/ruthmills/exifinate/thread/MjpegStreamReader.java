@@ -11,7 +11,10 @@ import java.time.ZoneOffset;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
@@ -111,7 +114,9 @@ public class MjpegStreamReader implements Runnable {
 		try {
 			LocalDateTime now = LocalDateTime.now();
 			String nowFormatted = Long.toString(now.toInstant(ZoneOffset.UTC).toEpochMilli());
-			TiffOutputSet outputSet = new TiffOutputSet();
+			JpegImageMetadata imageMetadata = (JpegImageMetadata) Imaging.getMetadata(currentFrame);
+			TiffImageMetadata exif = imageMetadata.getExif();
+			TiffOutputSet outputSet = exif.getOutputSet();
 			final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
 
 			// Use the APPLICATION_NOTES tag for the timestamp in milliseconds.
