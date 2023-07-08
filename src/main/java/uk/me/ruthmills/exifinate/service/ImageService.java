@@ -1,5 +1,10 @@
 package uk.me.ruthmills.exifinate.service;
 
+/**
+ * Image service. Stores the next EXIF-ed image from the camera.
+ * 
+ * @author ruth
+ */
 public interface ImageService {
 
 	/**

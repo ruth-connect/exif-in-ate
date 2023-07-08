@@ -12,9 +12,21 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import uk.me.ruthmills.exifinate.service.ImageService;
 
+/**
+ * MJPEG stream controller.
+ * 
+ * This is a HORRIBLE hack - as it will only work for ONE client connecting at
+ * once.
+ * 
+ * But it will work for our purposes, as only one client will ever connect at
+ * once anyway.
+ * 
+ * @author ruth
+ */
 @Controller
 public class MjpegStreamController {
 
+	// MJPEG multipart boundary stuff.
 	private static final String NL = "\r\n";
 	private static final String BOUNDARY = "--boundary";
 	private static final String HEAD = NL + NL + BOUNDARY + NL + "Content-Type: image/jpeg" + NL + "Content-Length: ";
@@ -24,6 +36,14 @@ public class MjpegStreamController {
 
 	private static final Logger logger = LoggerFactory.getLogger(MjpegStreamController.class);
 
+	/**
+	 * Get the MJPEG stream.
+	 * 
+	 * IMPORTANT - this will ONLY work for a SINGLE client connecting to this
+	 * application!
+	 * 
+	 * @return The MJPEG stream.
+	 */
 	@GetMapping(path = "/", produces = "multipart/x-mixed-replace;boundary=" + BOUNDARY)
 	public StreamingResponseBody getMjpegStream() {
 
@@ -40,10 +60,16 @@ public class MjpegStreamController {
 				}
 
 				try {
+					// Continue until the connection drops.
 					while (true) {
 						try {
+							// Wait for the next EXIF-ed image from the camera.
 							byte[] image = imageService.getNextImage();
+
+							// Write the MJPEG header stuff.
 							outputStream.write((HEAD + image.length + NL + NL).getBytes());
+
+							// Write the EXIF-ed image.
 							outputStream.write(image);
 						} catch (InterruptedException ex) {
 							logger.error("Interrupted Exception", ex);
