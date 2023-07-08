@@ -12,19 +12,27 @@ import java.time.format.DateTimeFormatter;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.ImageWriteException;
+import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import uk.me.ruthmills.exifinate.service.ImageService;
 
 @Component
 public class MjpegStreamReader implements Runnable {
 
 	private static final int INPUT_BUFFER_SIZE = 16384;
+
+	@Autowired
+	private ImageService imageService;
 
 	private URLConnection conn;
 	private ByteArrayOutputStream outputStream;
@@ -102,12 +110,19 @@ public class MjpegStreamReader implements Runnable {
 		return bufferedInputStream;
 	}
 
-	private void handleNewFrame() throws ImageWriteException {
+	private void handleNewFrame() throws ImageWriteException, ImageReadException, IOException {
 		LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 		String nowFormatted = now.format(DateTimeFormatter.ISO_DATE_TIME);
 		logger.info(nowFormatted);
 		TiffOutputSet outputSet = new TiffOutputSet();
 		final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
 		exifDirectory.add(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, nowFormatted);
+		try (ByteArrayOutputStream exifOutputStream = new ByteArrayOutputStream(INPUT_BUFFER_SIZE)) {
+			// Create a copy of the JPEG image with EXIF metadata added.
+			new ExifRewriter().updateExifMetadataLossless(currentFrame, exifOutputStream, outputSet);
+
+			// Set the next image in the image service.
+			imageService.setNextImage(outputStream.toByteArray());
+		}
 	}
 }
