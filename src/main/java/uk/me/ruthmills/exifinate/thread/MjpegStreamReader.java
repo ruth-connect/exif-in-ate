@@ -121,7 +121,7 @@ public class MjpegStreamReader implements Runnable {
 				new ExifRewriter().updateExifMetadataLossy(currentFrame, exifOutputStream, outputSet);
 
 				// Set the next image in the image service.
-				imageService.setNextImage(outputStream.toByteArray());
+				imageService.setNextImage(exifOutputStream.toByteArray());
 			}
 		} catch (Exception ex) {
 			logger.error("Exception when adding EXIF metadata", ex);
