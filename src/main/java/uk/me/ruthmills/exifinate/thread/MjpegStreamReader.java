@@ -109,7 +109,7 @@ public class MjpegStreamReader implements Runnable {
 
 	private void handleNewFrame() {
 		try {
-			LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+			LocalDateTime now = LocalDateTime.now();
 			String nowFormatted = Long.toString(now.toInstant(ZoneOffset.UTC).toEpochMilli());
 			TiffOutputSet outputSet = new TiffOutputSet();
 			final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
