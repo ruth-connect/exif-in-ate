@@ -44,7 +44,7 @@ public class MjpegStreamController {
 	 * 
 	 * @return The MJPEG stream.
 	 */
-	@GetMapping(path = "/", produces = "multipart/x-mixed-replace;boundary=" + BOUNDARY)
+	@GetMapping(path = "/mjpeg_stream", produces = "multipart/x-mixed-replace;boundary=" + BOUNDARY)
 	public StreamingResponseBody getMjpegStream() {
 
 		return new StreamingResponseBody() {
