@@ -12,8 +12,6 @@ import java.time.format.DateTimeFormatter;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.imaging.ImageReadException;
-import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
@@ -110,19 +108,25 @@ public class MjpegStreamReader implements Runnable {
 		return bufferedInputStream;
 	}
 
-	private void handleNewFrame() throws ImageWriteException, ImageReadException, IOException {
-		LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-		String nowFormatted = now.format(DateTimeFormatter.ISO_DATE_TIME);
-		logger.info(nowFormatted);
-		TiffOutputSet outputSet = new TiffOutputSet();
-		final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
-		exifDirectory.add(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL, nowFormatted);
-		try (ByteArrayOutputStream exifOutputStream = new ByteArrayOutputStream(INPUT_BUFFER_SIZE)) {
-			// Create a copy of the JPEG image with EXIF metadata added.
-			new ExifRewriter().updateExifMetadataLossless(currentFrame, exifOutputStream, outputSet);
+	private void handleNewFrame() {
+		try {
+			LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+			String nowFormatted = now.format(DateTimeFormatter.ISO_DATE_TIME);
+			TiffOutputSet outputSet = new TiffOutputSet();
+			final TiffOutputDirectory exifDirectory = outputSet.getOrCreateExifDirectory();
 
-			// Set the next image in the image service.
-			imageService.setNextImage(outputStream.toByteArray());
+			// Use the APPLICATION_NOTES tag for the timestamp (which includes
+			// milliseconds).
+			exifDirectory.add(ExifTagConstants.EXIF_TAG_APPLICATION_NOTES, nowFormatted.getBytes());
+			try (ByteArrayOutputStream exifOutputStream = new ByteArrayOutputStream(INPUT_BUFFER_SIZE)) {
+				// Create a copy of the JPEG image with EXIF metadata added.
+				new ExifRewriter().updateExifMetadataLossless(currentFrame, exifOutputStream, outputSet);
+
+				// Set the next image in the image service.
+				imageService.setNextImage(outputStream.toByteArray());
+			}
+		} catch (Exception ex) {
+			logger.error("Exception when adding EXIF metadata", ex);
 		}
 	}
 }
